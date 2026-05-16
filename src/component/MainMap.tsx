@@ -1,20 +1,25 @@
-import { Map, MapMarker } from "react-kakao-maps-sdk";
-import type { InfoItem, PathItem, PointItem, MergedItem } from "../type/types";
-// import { useState } from "react";
+import { Map } from "react-kakao-maps-sdk";
+import type { PathItem, PointItem, MergedItem } from "../type/types";
 import PointMarker from "./PointMarker";
 
 type MainMapProps = {
   points: PointItem[];
   paths: PathItem[];
   infos: MergedItem[];
+  selectedRoad: number | null;
+  onRoadSelect: (targetRoadNumber: number) => void;
 };
 
-export default function MainMap({ points, paths, infos }: MainMapProps) {
+export default function MainMap({
+  points,
+  paths,
+  infos,
+  selectedRoad,
+  onRoadSelect,
+}: MainMapProps) {
   console.log("MAIN MAP POINTS: ", points);
   console.log("MAIN MAP PATHS: ", paths);
   console.log("MAIN MAP INFOS: ", infos);
-
-  //   const [isOver, setIsOver] = useState<boolean>(false);
 
   const seoulCenter = {
     lat: 37.5665,
@@ -22,9 +27,14 @@ export default function MainMap({ points, paths, infos }: MainMapProps) {
   };
 
   return (
-    <Map center={seoulCenter} className="w-screen h-screen" level={8}>
+    <Map center={seoulCenter} className="w-screen h-screen" level={9}>
       {infos.map((i) => (
-        <PointMarker key={i.BGNG_PSTN} item={i} />
+        <PointMarker
+          key={i.ROAD_NO}
+          item={i}
+          onRoadSelect={onRoadSelect}
+          isSelected={i.ROAD_NO === selectedRoad}
+        />
       ))}
     </Map>
   );

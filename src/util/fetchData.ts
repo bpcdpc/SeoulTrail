@@ -68,34 +68,65 @@ function getPositionByName(name: string): Promise<Position> {
 // 비동기 딜레이
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// 둘레길 상세 정보에 위도, 경도 정보 병함
+// 둘레길 상세 정보에 위도, 경도 주입
 export async function fetchMergedItems(): Promise<MergedItem[]> {
-  // const CACHE_KEY = "seoul_trail_merged_items";
-  // const cachedData = localStorage.getItem(CACHE_KEY);
+  // 캐시 설정
+  const CACHE_KEY = "seoul_trail_merged_items";
+  const cachedData = localStorage.getItem(CACHE_KEY);
 
   // 캐시가 존재한다면 캐시 데이터를 반환
-  // if (cachedData) {
-  //   console.log("캐시 데이터가 존재하므로 캐시된 데이터를 불러옵니다.");
-  //   return JSON.parse(cachedData) as MergedItem[];
-  // }
+  if (cachedData) {
+    console.log("캐시 데이터가 존재하므로 캐시된 데이터를 불러옵니다.");
+    return JSON.parse(cachedData) as MergedItem[];
+  }
 
-  // 둘레길 상세 정보 fetch
+  // 둘레길 상세 정보 가져오기
   const infoItems: InfoItem[] = await fetchInfoItems();
 
+  // 카카오맵이 공격으로 인식하지 않게 위해 청킹.
+  // // 초당, 분당 rate limit이 각각 있는 것으로 보여, 4개씩만 청킹하고, 1초씩 딜레이를 줌.
+  // // 순차방식 : 21개 아이템 x 0.8초 딜레이 = 16.8 초 걸림
+  // // 청크방식 : (ceil(21개 아이템 / 청크 4개) * 1초 딜레이) - 마지막 루프에 딜레이 1초 제거  = 5초 걸림
+  // // 실제 운영시에는 동시 접속자가 생기므로, 현재 방식으로는 운영이 불가함.
+  // // 서버 사이드에서 처리해야 할 것으로 보임.
   const mergedItems: MergedItem[] = [];
+  const chunkSize: number = 4;
 
-  // 둘레길 상세 정보에 순차적으로 위도 경도 주입
-  for (const item of infoItems) {
-    try {
-      const cleanName = item.BGNG_PSTN.trim();
-      const position = await getPositionByName(cleanName);
-      mergedItems.push({ ...item, position });
-      console.log(`${item.BGNG_PSTN} 좌표 검색 성공`);
-      await delay(800);
-    } catch (error) {
-      console.error(`${item.BGNG_PSTN} 좌표 검색 실패:`, error);
+  for (let i = 0; i < infoItems.length; i += chunkSize) {
+    const chunk = infoItems.slice(i, i + chunkSize);
+
+    // 청크 크기만큼 프라미스 배열 생성
+    const chunkPromises: Promise<Position>[] = chunk.map((item) =>
+      getPositionByName(item.BGNG_PSTN),
+    );
+
+    // 청크 크기만큼 병렬 처리
+    const chunkPositions: Position[] = await Promise.all(chunkPromises);
+
+    // 둘레길 상세 정보에 좌표 정보 병합
+    chunkPositions.map((item, index) => {
+      mergedItems.push({ ...infoItems[i + index], position: item });
+      console.log(`${infoItems[i + index].BGNG_PSTN} 좌표 검색 성공`);
+    });
+
+    // 마지막 루프가 아닐 경우에만 대기
+    if (i + chunkSize < infoItems.length) {
+      await delay(1000);
     }
   }
+
+  // 청킹하지 않고 순차적으로 가져오는 방식.
+  // for (const item of infoItems) {
+  //   try {
+  //     const cleanName = item.BGNG_PSTN.trim();
+  //     const position = await getPositionByName(cleanName);
+  //     mergedItems.push({ ...item, position });
+  //     console.log(`${item.BGNG_PSTN} 좌표 검색 성공`);
+  //     await delay(800);
+  //   } catch (error) {
+  //     console.error(`${item.BGNG_PSTN} 좌표 검색 실패:`, error);
+  //   }
+  // }
 
   // 하나도 가져오지 못했을 경우
   if (mergedItems.length === 0)
@@ -105,6 +136,6 @@ export async function fetchMergedItems(): Promise<MergedItem[]> {
   console.log(
     `좌표 검색이 끝났습니다. 전체 ${infoItems.length}개 중 ${mergedItems.length}개 성공`,
   );
-  // localStorage.setItem(CACHE_KEY, JSON.stringify(mergedItems));
+  localStorage.setItem(CACHE_KEY, JSON.stringify(mergedItems));
   return mergedItems;
 }
