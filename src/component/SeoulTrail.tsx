@@ -9,6 +9,8 @@ import { useKakaoLoader } from "react-kakao-maps-sdk";
 import MainMap from "./MainMap";
 import { ENV } from "../config/env";
 import SideBar from "./SideBar";
+import Footer from "./Footer";
+import Header from "./Header";
 
 export default function SeoulTrail() {
   // 데이터를 담을 states
@@ -32,22 +34,24 @@ export default function SeoulTrail() {
 
   const onSideBarClose = () => {
     setIsSideBarOpen(false);
-    setSelectedRoad(null);
+    // setSelectedRoad(null);
   };
 
-  const onSideBarOpen = () => {
-    setIsSideBarOpen(true);
+  const afterSideBarClosed = () => {
+    if (!isSideBarOpen) {
+      setSelectedRoad(null);
+    }
   };
 
   // 카카오 지도 로딩 hook
-  const [mapLoaded, mapLoadingError] = useKakaoLoader({
+  const [isMapLoading, mapLoadingError] = useKakaoLoader({
     appkey: ENV.KAKAO_KEY,
     libraries: ["services", "drawing"],
   });
 
   // 데이터 가져오기
   useEffect(() => {
-    if (mapLoaded) return; // 지도가 로드되기 전에 데이터 가져오는 것을 방지
+    if (isMapLoading || mapLoadingError) return; // 지도가 로드되기 전에 데이터 가져오는 것을 방지
 
     async function loadInitialData() {
       try {
@@ -67,10 +71,10 @@ export default function SeoulTrail() {
       }
     }
     loadInitialData();
-  }, [mapLoaded]); // 지도 로딩 여부를 의존성으로 주입
+  }, [isMapLoading, mapLoadingError]); // 지도 로딩 여부를 의존성으로 주입
 
   //  지도 로딩중
-  if (mapLoaded)
+  if (isMapLoading)
     return (
       <div className="flex flex-col gap-4 items-center justify-center w-screen h-screen bg-gray-100">
         <div className="text-2xl">Map Loading....</div>
@@ -139,12 +143,13 @@ export default function SeoulTrail() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
+      <Header />
       <SideBar
         item={selectedItem}
         isSideBarOpen={isSideBarOpen}
         onSideBarClose={onSideBarClose}
+        afterSideBarClosed={afterSideBarClosed}
       />
-      {/* <OpenButton onSideBarOpen={onSideBarOpen} /> */}
       <MainMap
         points={points}
         paths={paths}
@@ -152,6 +157,7 @@ export default function SeoulTrail() {
         selectedRoad={selectedRoad || null}
         onRoadSelect={onRoadSelect}
       />
+      <Footer />
     </div>
   );
 }

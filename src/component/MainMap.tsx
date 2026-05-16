@@ -1,6 +1,9 @@
 import { Map } from "react-kakao-maps-sdk";
 import type { PathItem, PointItem, MergedItem } from "../type/types";
 import PointMarker from "./PointMarker";
+import MapMarkerSet from "./MarkerSet";
+import { LocateFixed, Plus, Minus } from "lucide-react";
+import { useRef, useState } from "react";
 
 type MainMapProps = {
   points: PointItem[];
@@ -26,17 +29,81 @@ export default function MainMap({
     lng: 126.978,
   };
 
+  const mapRef = useRef<kakao.maps.Map>(null);
+  const [center, setCenter] = useState(seoulCenter);
+
+  const zoomIn = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setLevel(map.getLevel() - 1);
+  };
+
+  const zoomOut = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setLevel(map.getLevel() + 1);
+  };
+
+  const onMyLocation = () => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      setCenter({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    });
+  };
+
   return (
-    <Map center={seoulCenter} className="w-screen h-screen" level={9}>
-      {infos.map((i) => (
-        <PointMarker
-          key={i.ROAD_NO}
-          item={i}
-          onRoadSelect={onRoadSelect}
-          isSelected={i.ROAD_NO === selectedRoad}
-        />
-      ))}
-    </Map>
+    <div>
+      {/* 지도 */}
+      <Map
+        center={center}
+        isPanto={true}
+        className="w-screen h-screen"
+        level={9}
+        ref={mapRef}
+      >
+        {infos.map((i) => (
+          // <PointMarker
+          //   key={i.ROAD_NO}
+          //   item={i}
+          //   onRoadSelect={onRoadSelect}
+          //   isSelected={i.ROAD_NO === selectedRoad}
+          // />
+          <MapMarkerSet
+            key={i.ROAD_NO}
+            item={i}
+            onRoadSelect={onRoadSelect}
+            isSelected={i.ROAD_NO === selectedRoad}
+          />
+        ))}
+      </Map>
+      {/* 줌버튼 */}
+      <div className="absolute z-20 bottom-26 right-4 flex flex-col bg-white rounded-sm shadow-md">
+        <button
+          className="flex h-10 w-10 items-center justify-center border-b border-b-gray-200"
+          onClick={() => zoomIn}
+        >
+          <Plus size={20} strokeWidth={2.5} />
+        </button>
+        <button
+          className="flex h-10 w-10 items-center justify-center"
+          onClick={() => zoomOut}
+        >
+          <Minus size={20} strokeWidth={2.5} />
+        </button>
+      </div>
+
+      {/* 내 위치 버튼 */}
+      <div className="absolute z-20 bottom-14 right-4">
+        <button
+          onClick={onMyLocation}
+          className="flex h-10 w-10 items-center justify-center bg-white rounded-sm shadow-md"
+        >
+          <LocateFixed size={20} strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -22,6 +22,7 @@ export default function PointMarker({
         lat: Number(item.position.LAT),
         lng: Number(item.position.LOT),
       }}
+      // image={{src:"", size:}}
       onClick={onClick}
       onMouseOver={() => {
         setIsOver(true);
@@ -32,7 +33,6 @@ export default function PointMarker({
     >
       {(isOver || isSelected) && (
         <span className="flex w-full h-full items-center justify-center text-xs whitespace-nowrap">
-          {isSelected ? "Clicked!" : ""}
           {`[${item.ROAD_NO}]${item.ROAD_NM}길 시작지점: ${item.BGNG_PSTN}`}
         </span>
       )}
