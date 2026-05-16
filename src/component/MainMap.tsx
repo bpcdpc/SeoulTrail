@@ -17,9 +17,9 @@ export default function MainMap({
   selectedRoad,
   onRoadSelect,
 }: MainMapProps) {
-  console.log("MAIN MAP POINTS: ", points);
-  console.log("MAIN MAP PATHS: ", paths);
-  console.log("MAIN MAP INFOS: ", infos);
+  // console.log("MAIN MAP POINTS: ", points);
+  // console.log("MAIN MAP PATHS: ", paths);
+  // console.log("MAIN MAP INFOS: ", infos);
 
   const seoulCenter = {
     lat: 37.5665,

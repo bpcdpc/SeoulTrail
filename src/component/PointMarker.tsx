@@ -32,8 +32,8 @@ export default function PointMarker({
     >
       {(isOver || isSelected) && (
         <span className="flex w-full h-full items-center justify-center text-xs whitespace-nowrap">
-          {isSelected ? `[${item.ROAD_NO}]번길 : ` : ""}
-          {item.BGNG_PSTN}
+          {isSelected ? "Clicked!" : ""}
+          {`[${item.ROAD_NO}]${item.ROAD_NM}길 시작지점: ${item.BGNG_PSTN}`}
         </span>
       )}
     </MapMarker>

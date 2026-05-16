@@ -8,6 +8,7 @@ import {
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 import MainMap from "./MainMap";
 import { ENV } from "../config/env";
+import SideBar from "./SideBar";
 
 export default function SeoulTrail() {
   // 데이터를 담을 states
@@ -22,9 +23,20 @@ export default function SeoulTrail() {
 
   // 선택된 아이템을 위한 state
   const [selectedRoad, setSelectedRoad] = useState<number | null>(null);
+  const [isSideBarOpen, setIsSideBarOpen] = useState<boolean>(false);
 
   const onRoadSelect = (targetRoadNumber: number) => {
     setSelectedRoad(targetRoadNumber);
+    setIsSideBarOpen(true);
+  };
+
+  const onSideBarClose = () => {
+    setIsSideBarOpen(false);
+    setSelectedRoad(null);
+  };
+
+  const onSideBarOpen = () => {
+    setIsSideBarOpen(true);
   };
 
   // 카카오 지도 로딩 hook
@@ -121,8 +133,18 @@ export default function SeoulTrail() {
       </div>
     );
 
+  const selectedItem: MergedItem = infos.filter(
+    (item) => item.ROAD_NO === selectedRoad,
+  )[0];
+
   return (
-    <>
+    <div className="relative w-screen h-screen overflow-hidden">
+      <SideBar
+        item={selectedItem}
+        isSideBarOpen={isSideBarOpen}
+        onSideBarClose={onSideBarClose}
+      />
+      {/* <OpenButton onSideBarOpen={onSideBarOpen} /> */}
       <MainMap
         points={points}
         paths={paths}
@@ -130,6 +152,6 @@ export default function SeoulTrail() {
         selectedRoad={selectedRoad || null}
         onRoadSelect={onRoadSelect}
       />
-    </>
+    </div>
   );
 }
