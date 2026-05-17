@@ -1,21 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
-import type { MergedItem } from "../type/geoTypes";
-import { fetchMergedItems } from "../util/fetchGeoData";
-import { useKakaoLoader } from "react-kakao-maps-sdk";
-import MainMap from "./MainMap";
 import { ENV } from "../config/env";
+import type { MergedItem } from "../type/geoTypes";
+import { useKakaoLoader } from "react-kakao-maps-sdk";
+import { useState, useEffect, useCallback, useReducer } from "react";
+import { TrailStateContext } from "../context/TrailStateContext";
+import { TrailDispatchContext } from "../context/TrailDispatchContext";
+import { initialTrailState, trailReducer } from "../reducer/trailReducer";
+import { fetchMergedItems } from "../util/fetchGeoData";
+
+import MainMap from "./MainMap";
 import SideBar from "./SideBar";
 import Footer from "./Footer";
 import Header from "./Header";
 import StatusScreen from "./StatusScreen";
 import RefreshButton from "./RefreshButton";
 import Spinner from "./Spinner";
-import { TrailStateContext } from "../context/TrailStateContext";
-import { TrailDispatchContext } from "../context/TrailDispatchContext";
 
 export default function SeoulTrail() {
-  // 데이터를 담을 states
-  const [infos, setInfos] = useState<MergedItem[]>([]);
+  // 상태 관리 reducer
+  const [state, dispatch] = useReducer(trailReducer, initialTrailState);
 
   // 렌더링을 조건을 위한 states
   const [fetching, setFetching] = useState<boolean>(true);
@@ -28,40 +30,31 @@ export default function SeoulTrail() {
     libraries: ["services"],
   });
 
-  // 선택된 둘레길을 위한 state
-  const [selectedRoad, setSelectedRoad] = useState<number | null>(null);
-  const [isSideBarOpen, setIsSideBarOpen] = useState<boolean>(false);
-
-  // 난이도 필터링을 위한 state
-  const [selectedLevel, setSelectedLevel] = useState<string>("");
-
   // 지도에서 특정 둘레길 마커를 선택할 때
-  const onRoadSelect = useCallback((targetRoadNumber: number) => {
-    setSelectedRoad(targetRoadNumber);
-    setIsSideBarOpen(true);
-  }, []);
+  const onRoadSelect = useCallback(
+    (targetRoadNumber: number) =>
+      dispatch({ type: "SELECT_ROAD", payload: targetRoadNumber }),
+    [],
+  );
 
   // 사이드바가 닫힐 때
-  const onSideBarClose = useCallback(() => {
-    setIsSideBarOpen(false);
-  }, []);
+  const onSideBarClose = useCallback(
+    () => dispatch({ type: "CLOSE_SIDEBAR" }),
+    [],
+  );
 
   // 사이드바가 닫힌 후에
-  const afterSideBarClosed = useCallback(() => {
-    if (!isSideBarOpen) {
-      setSelectedRoad(null);
-    }
-  }, []);
+  const afterSideBarClosed = useCallback(
+    () => dispatch({ type: "AFTER_SIDEBAR_CLOSED" }),
+    [],
+  );
 
   // 앱을 초기화
-  const onAppInit = useCallback(() => {
-    // setSelectedRoad(null);
-    setIsSideBarOpen(false);
-  }, []);
+  const onAppInit = useCallback(() => dispatch({ type: "APP_INIT" }), []);
 
   // 난이도를 선택할 때
   const onLevelChange = useCallback(
-    (levelName: string) => setSelectedLevel(levelName),
+    (levelName: string) => dispatch({ type: "SET_LEVEL", payload: levelName }),
     [],
   );
 
@@ -72,7 +65,8 @@ export default function SeoulTrail() {
     const loadInitialData = async () => {
       try {
         const infoResults = await fetchMergedItems();
-        setInfos(infoResults);
+        // setInfos(infoResults);
+        dispatch({ type: "SET_INFOS", payload: infoResults });
         setFetched(true); // 데이터가 성공적으로 가져와짐
       } catch (err) {
         console.error(err);
@@ -143,7 +137,12 @@ export default function SeoulTrail() {
       }}
     >
       <TrailStateContext.Provider
-        value={{ infos, selectedRoad, isSideBarOpen, selectedLevel }}
+        value={{
+          infos: state.infos,
+          selectedRoad: state.selectedRoad,
+          isSideBarOpen: state.isSideBarOpen,
+          selectedLevel: state.selectedLevel,
+        }}
       >
         <div className="relative w-screen h-screen overflow-hidden">
           <Header />
