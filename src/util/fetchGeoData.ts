@@ -3,10 +3,10 @@ import type {
   InfoItem,
   InfoResponse,
   MergedItem,
-  PathItem,
-  PathResponse,
-  PointItem,
-  PointResponse,
+  // PathItem,
+  // PathResponse,
+  // PointItem,
+  // PointResponse,
   Position,
 } from "../type/geoTypes";
 
@@ -35,20 +35,20 @@ export async function fetchInfoItems(): Promise<InfoItem[]> {
 }
 
 // 둘레길 선형 좌표
-export async function fetchPathItems(): Promise<PathItem[]> {
-  const url = `${ENV.SODATA_URL}/${ENV.SODATA_KEY}/json/SdeDoDreamWay01LW/1/100`;
-  const pathRes: PathResponse | null = await fetchData<PathResponse>(url);
-  if (!pathRes) throw new Error("둘레길 선형 좌표를 가져오지 못했습니다.");
-  return pathRes.SdeDoDreamWay01LW.row;
-}
+// export async function fetchPathItems(): Promise<PathItem[]> {
+//   const url = `${ENV.SODATA_URL}/${ENV.SODATA_KEY}/json/SdeDoDreamWay01LW/1/100`;
+//   const pathRes: PathResponse | null = await fetchData<PathResponse>(url);
+//   if (!pathRes) throw new Error("둘레길 선형 좌표를 가져오지 못했습니다.");
+//   return pathRes.SdeDoDreamWay01LW.row;
+// }
 
 // 둘레길 점형 좌표
-export async function fetchPointItems(): Promise<PointItem[]> {
-  const url = `${ENV.SODATA_URL}/${ENV.SODATA_KEY}/json/SdeDoDreamWay01PW/1/200`;
-  const pointRes: PointResponse | null = await fetchData<PointResponse>(url);
-  if (!pointRes) throw new Error("둘레길 점형 좌표를 가져오지 못했습니다.");
-  return pointRes.SdeDoDreamWay01PW.row;
-}
+// export async function fetchPointItems(): Promise<PointItem[]> {
+//   const url = `${ENV.SODATA_URL}/${ENV.SODATA_KEY}/json/SdeDoDreamWay01PW/1/200`;
+//   const pointRes: PointResponse | null = await fetchData<PointResponse>(url);
+//   if (!pointRes) throw new Error("둘레길 점형 좌표를 가져오지 못했습니다.");
+//   return pointRes.SdeDoDreamWay01PW.row;
+// }
 
 // 둘레길 이름으로 좌표 얻어오기
 function getPositionByName(name: string): Promise<Position> {

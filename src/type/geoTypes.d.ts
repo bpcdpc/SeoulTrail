@@ -1,39 +1,39 @@
-export interface PointItem {
-  SN: string;
-  NM: string;
-  LAT: string;
-  LOT: string;
-}
+// export interface PointItem {
+//   SN: string;
+//   NM: string;
+//   LAT: string;
+//   LOT: string;
+// }
 
-export interface PointResponse {
-  SdeDoDreamWay01PW: {
-    list_total_count: number;
-    RESULT: {
-      CODE: string;
-      MESSAGE: string;
-    };
-    row: PointItem[];
-  };
-}
+// export interface PointResponse {
+//   SdeDoDreamWay01PW: {
+//     list_total_count: number;
+//     RESULT: {
+//       CODE: string;
+//       MESSAGE: string;
+//     };
+//     row: PointItem[];
+//   };
+// }
 
-export interface PathItem {
-  SN: string;
-  NM: string;
-  SHP: string;
-  LAT: string;
-  LOT: string;
-}
+// export interface PathItem {
+//   SN: string;
+//   NM: string;
+//   SHP: string;
+//   LAT: string;
+//   LOT: string;
+// }
 
-export interface PathResponse {
-  SdeDoDreamWay01LW: {
-    list_total_count: number;
-    RESULT: {
-      CODE: string;
-      MESSAGE: string;
-    };
-    row: PathItem[];
-  };
-}
+// export interface PathResponse {
+//   SdeDoDreamWay01LW: {
+//     list_total_count: number;
+//     RESULT: {
+//       CODE: string;
+//       MESSAGE: string;
+//     };
+//     row: PathItem[];
+//   };
+// }
 
 export interface InfoItem {
   MENU_SN: string;
