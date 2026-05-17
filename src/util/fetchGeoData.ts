@@ -8,7 +8,7 @@ import type {
   PointItem,
   PointResponse,
   Position,
-} from "../type/types";
+} from "../type/geoTypes";
 
 // 데이터 페칭
 async function fetchData<T>(url: string): Promise<T | null> {
@@ -57,7 +57,7 @@ function getPositionByName(name: string): Promise<Position> {
 
     places.keywordSearch(name, (result, status) => {
       if (status === kakao.maps.services.Status.OK) {
-        resolve({ LAT: result[0].y, LOT: result[0].x });
+        resolve({ lat: Number(result[0].y), lng: Number(result[0].x) });
       } else {
         reject(new Error("좌표를 찾을 수 없습니다."));
       }
@@ -132,10 +132,11 @@ export async function fetchMergedItems(): Promise<MergedItem[]> {
   if (mergedItems.length === 0)
     throw new Error("좌표를 하나도 가져오지 못했습니다.");
 
-  // 로컬 스토리지에 저장하고 데이터 반환
   console.log(
     `좌표 검색이 끝났습니다. 전체 ${infoItems.length}개 중 ${mergedItems.length}개 성공`,
   );
+
+  // 로컬 스토리지에 저장하고 데이터 반환
   localStorage.setItem(CACHE_KEY, JSON.stringify(mergedItems));
   return mergedItems;
 }

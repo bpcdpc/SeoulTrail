@@ -1,5 +1,5 @@
 import { MapMarker } from "react-kakao-maps-sdk";
-import type { MergedItem } from "../type/types";
+import type { MergedItem } from "../type/geoTypes";
 import { useState } from "react";
 
 type PointMarkerProps = {
@@ -19,10 +19,9 @@ export default function PointMarker({
   return (
     <MapMarker
       position={{
-        lat: Number(item.position.LAT),
-        lng: Number(item.position.LOT),
+        lat: item.position.lat,
+        lng: item.position.lng,
       }}
-      // image={{src:"", size:}}
       onClick={onClick}
       onMouseOver={() => {
         setIsOver(true);

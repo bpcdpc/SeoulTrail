@@ -1,16 +1,21 @@
 import { CustomOverlayMap } from "react-kakao-maps-sdk";
-import type { MergedItem } from "../type/types";
+import type { MergedItem } from "../type/geoTypes";
 import { useState } from "react";
+import { setLevelClassName } from "../util/miscFunctions";
 
 type MapMarkerSetProps = {
   item: MergedItem;
   isSelected: boolean;
+  levelName: string;
+  // isFiltered: boolean;
   onRoadSelect: (targetRoadNumber: number) => void;
 };
 
 export default function MapMarkerSet({
   item,
   isSelected,
+  // isFiltered,
+  levelName,
   onRoadSelect,
 }: MapMarkerSetProps) {
   const [isOver, setIsOver] = useState<boolean>(false);
@@ -18,13 +23,31 @@ export default function MapMarkerSet({
   const onClick = () => onRoadSelect(item.ROAD_NO);
 
   const isActivated: Boolean = isOver || isSelected;
-  const overlayZIndex: number = isOver ? 50 : isSelected ? 30 : 10; // 마우스오버가 가장 위에 보이도록
+  const isFiltered: Boolean = levelName === item.LV_KORN;
+  const overlayZIndex: number = isOver
+    ? 50
+    : isSelected || isFiltered
+      ? 30
+      : 10;
+
+  let markerStyles =
+    "w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md hover:scale-110";
+
+  if (isSelected) {
+    markerStyles += " bg-indigo-600 scale-110 ring-4 ring-indigo-200";
+  } else if (isFiltered) {
+    markerStyles += ` ${setLevelClassName(item.LV_KORN)}`;
+  } else if (levelName !== "") {
+    markerStyles += " bg-gray-300 hover:bg-blue-500";
+  } else {
+    markerStyles += " bg-blue-400 text-white hover:bg-blue-500";
+  }
 
   return (
     <CustomOverlayMap
       position={{
-        lat: Number(item.position.LAT),
-        lng: Number(item.position.LOT),
+        lat: item.position.lat,
+        lng: item.position.lng,
       }}
       yAnchor={0.5} // 마커의 중심을 기준점으로 설정
       zIndex={overlayZIndex}
@@ -37,27 +60,23 @@ export default function MapMarkerSet({
         {/* InfoWindow */}
         {isActivated && (
           <div
-            className="absolute bottom-10 z-50 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-xl border border-gray-100 min-w-40 pointer-events-none"
+            className="absolute bottom-10 z-50 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-xl border border-gray-100 min-w-3 pointer-events-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-xs font-semibold text-indigo-600">
-              {item.BGNG_PSTN}
+            <p
+              className={`text-xs font-semibold text-blue-600 ${
+                isSelected ? "text-indigo-600" : "text-blue-600"
+              }`}
+            >
+              {item.ROAD_NM}길
             </p>
             <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100" />
           </div>
         )}
 
         {/* Marker */}
-        <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md
-            ${
-              isSelected
-                ? "bg-indigo-600 text-white scale-110 ring-4 ring-indigo-200"
-                : "bg-white text-indigo-600 hover:bg-indigo-50 hover:scale-105"
-            }`}
-          onClick={onClick}
-        >
-          <span className="text-xs font-bold">{item.ROAD_NO}</span>
+        <div className={markerStyles} onClick={onClick}>
+          <span className="text-xs text-white font-bold">{item.ROAD_NO}</span>
         </div>
       </div>
     </CustomOverlayMap>

@@ -1,21 +1,18 @@
 import { useState, useEffect } from "react";
-import type { PathItem, PointItem, MergedItem } from "../type/types";
-import {
-  fetchPathItems,
-  fetchPointItems,
-  fetchMergedItems,
-} from "../util/fetchData";
+import type { MergedItem } from "../type/geoTypes";
+import { fetchMergedItems } from "../util/fetchGeoData";
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 import MainMap from "./MainMap";
 import { ENV } from "../config/env";
 import SideBar from "./SideBar";
 import Footer from "./Footer";
 import Header from "./Header";
+import StatusScreen from "./StatusScreen";
+import RefreshButton from "./RefreshButton";
+import Spinner from "./Spinner";
 
 export default function SeoulTrail() {
   // 데이터를 담을 states
-  const [points, setPoints] = useState<PointItem[]>([]);
-  const [paths, setPaths] = useState<PathItem[]>([]);
   const [infos, setInfos] = useState<MergedItem[]>([]);
 
   // 렌더링을 조건을 위한 states
@@ -23,127 +20,115 @@ export default function SeoulTrail() {
   const [fetched, setFetched] = useState<boolean>(false);
   const [showMap, setShowMap] = useState<boolean>(false);
 
-  // 선택된 아이템을 위한 state
+  // 카카오 지도 로딩 hook
+  const [isMapLoading, mapLoadingError] = useKakaoLoader({
+    appkey: ENV.MAP_KEY,
+    libraries: ["services"],
+  });
+
+  // 선택된 둘레길을 위한 state
   const [selectedRoad, setSelectedRoad] = useState<number | null>(null);
   const [isSideBarOpen, setIsSideBarOpen] = useState<boolean>(false);
 
+  // 지도에서 특정 둘레길 마커를 선택할 때
   const onRoadSelect = (targetRoadNumber: number) => {
     setSelectedRoad(targetRoadNumber);
     setIsSideBarOpen(true);
   };
 
+  // 선택된 마커의 둘레길 번호에 해당하는 객체를 지정
+  const selectedItem: MergedItem = infos.filter(
+    (item) => item.ROAD_NO === selectedRoad,
+  )[0];
+
+  // 사이드바가 닫힐 때
   const onSideBarClose = () => {
     setIsSideBarOpen(false);
-    // setSelectedRoad(null);
   };
 
+  // 사이드바가 닫힌 후에
   const afterSideBarClosed = () => {
     if (!isSideBarOpen) {
       setSelectedRoad(null);
     }
   };
 
-  // 카카오 지도 로딩 hook
-  const [isMapLoading, mapLoadingError] = useKakaoLoader({
-    appkey: ENV.KAKAO_KEY,
-    libraries: ["services", "drawing"],
-  });
+  // 앱을 초기화
+  const onAppInit = () => {
+    setSelectedRoad(null);
+    setIsSideBarOpen(false);
+  };
 
   // 데이터 가져오기
   useEffect(() => {
     if (isMapLoading || mapLoadingError) return; // 지도가 로드되기 전에 데이터 가져오는 것을 방지
 
-    async function loadInitialData() {
+    const loadInitialData = async () => {
       try {
-        const [pointResults, pathResults, infoResults] = await Promise.all([
-          fetchPointItems(),
-          fetchPathItems(),
-          fetchMergedItems(),
-        ]);
-        setPoints(pointResults);
-        setPaths(pathResults);
+        const infoResults = await fetchMergedItems();
         setInfos(infoResults);
-        setFetched(true);
+        setFetched(true); // 데이터가 성공적으로 가져와짐
       } catch (err) {
         console.error(err);
       } finally {
-        setFetching(false);
+        setFetching(false); // 성공 실패에 관계없이 데이터 가져오는 과정이 끝났음
       }
-    }
+    };
     loadInitialData();
-  }, [isMapLoading, mapLoadingError]); // 지도 로딩 여부를 의존성으로 주입
+  }, [isMapLoading, mapLoadingError]); // 지도 로딩 여부를 의존성 주입
 
   //  지도 로딩중
   if (isMapLoading)
     return (
-      <div className="flex flex-col gap-4 items-center justify-center w-screen h-screen bg-gray-100">
-        <div className="text-2xl">Map Loading....</div>
-      </div>
+      <StatusScreen message={"Map loading..."}>
+        <Spinner />
+      </StatusScreen>
     );
 
   // 지도 로딩 실패
   if (mapLoadingError)
     return (
-      <div className="flex flex-col gap-4 items-center justify-center w-screen h-screen bg-gray-100">
-        <div>지도 로드에 실패했습니다. 다시 시도해 주세요.</div>
-        <button
-          className="px-2 py-1 text-white bg-gray-500 rounded-lg text-sm"
-          onClick={() => {
-            window.location.reload();
-          }}
-        >
-          새로고침
-        </button>
-      </div>
+      <StatusScreen message={"지도 로드에 실패했습니다. 다시 시도해 주세요."}>
+        <RefreshButton />
+      </StatusScreen>
     );
 
-  // 데이터 로딩
+  // 데이터 로딩중
   if (fetching)
     return (
-      <div className="flex flex-col gap-4 items-center justify-center w-screen h-screen bg-gray-100">
-        <div className="text-2xl">Data Fetching....</div>
-      </div>
+      <StatusScreen message={"Data loading..."}>
+        <Spinner />
+      </StatusScreen>
     );
 
   // 데이터 로딩 실패
   if (!fetched)
     return (
-      <div className="flex flex-col gap-4 items-center justify-center w-screen h-screen bg-gray-100">
-        <div>데이터를 가져오는데 실패했습니다. 다시 시도해 주세요.</div>
-        <button
-          className="px-2 py-1 text-white bg-gray-500 rounded-lg text-sm"
-          onClick={() => {
-            window.location.reload();
-          }}
-        >
-          새로고침
-        </button>
-      </div>
+      <StatusScreen
+        message={"데이터를 가져오는데 실패했습니다. 다시 시도해 주세요."}
+      >
+        <RefreshButton />
+      </StatusScreen>
     );
 
   // 데이터 로딩 성공
   if (fetched && !showMap)
     return (
-      <div className="flex flex-col gap-4 items-center justify-center w-screen h-screen bg-gray-100">
-        <div className="text-2xl">데이터가 준비되었습니다.</div>
+      <StatusScreen backgroundColor={"bg-blue-500"}>
         <button
-          className="px-4 py-2 text-white bg-blue-500 rounded-lg"
+          className="px-4 py-2 text-blue-600 bg-white rounded-md text-xl font-extrabold transition-all ease-in-out hover:scale-103"
           onClick={() => {
             setShowMap(true);
           }}
         >
-          시작
+          SOUEL TRAIL
         </button>
-      </div>
+      </StatusScreen>
     );
-
-  const selectedItem: MergedItem = infos.filter(
-    (item) => item.ROAD_NO === selectedRoad,
-  )[0];
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
-      <Header />
+      <Header onInit={onAppInit} />
       <SideBar
         item={selectedItem}
         isSideBarOpen={isSideBarOpen}
@@ -151,8 +136,6 @@ export default function SeoulTrail() {
         afterSideBarClosed={afterSideBarClosed}
       />
       <MainMap
-        points={points}
-        paths={paths}
         infos={infos}
         selectedRoad={selectedRoad || null}
         onRoadSelect={onRoadSelect}

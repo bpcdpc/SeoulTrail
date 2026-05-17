@@ -66,8 +66,8 @@ export interface InfoResponse {
 }
 
 export interface Position {
-  LAT: string;
-  LOT: string;
+  lat: number;
+  lng: number;
 }
 
 export interface MergedItem extends InfoItem {

@@ -1,124 +1,163 @@
-import { Map } from "react-kakao-maps-sdk";
-import type { PathItem, PointItem, MergedItem } from "../type/types";
-import PointMarker from "./PointMarker";
+import { Map, MapTypeId, Polyline } from "react-kakao-maps-sdk";
+import type { MergedItem, Position } from "../type/geoTypes";
 import MapMarkerSet from "./MarkerSet";
-import { LocateFixed, Plus, Minus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ZoomButtons from "./ZoomButtons";
+import MyLocationButton from "./MyLocationButton";
+import MyLocationMarker from "./MyLocationMarker";
+import { parseGeoJson } from "../util/parseGeoJson";
+import FilterButtons from "./FilterButtons";
+import { SEOUL_CENTER } from "../data/seoulCenter";
 
 type MainMapProps = {
-  points: PointItem[];
-  paths: PathItem[];
   infos: MergedItem[];
   selectedRoad: number | null;
   onRoadSelect: (targetRoadNumber: number) => void;
 };
 
 export default function MainMap({
-  points,
-  paths,
   infos,
   selectedRoad,
   onRoadSelect,
 }: MainMapProps) {
-  // console.log("MAIN MAP POINTS: ", points);
-  // console.log("MAIN MAP PATHS: ", paths);
-  // console.log("MAIN MAP INFOS: ", infos);
-
-  const seoulCenter = {
-    lat: 37.5665,
-    lng: 126.978,
-  };
-
+  // 지도를 조작하기 위해 필요
   const mapRef = useRef<kakao.maps.Map>(null);
-  const [center, setCenter] = useState(seoulCenter);
+
+  // 지도 렌더링 관련 state
+  const [center, setCenter] = useState<Position>(SEOUL_CENTER);
+  const [mapLevel, setMapLevel] = useState<number>(9);
+  const [isMyLocation, setIsMyLocation] = useState<boolean>(false);
+  const [myLocation, setMyLocation] = useState<Position>(center);
+
+  // 난이도 필터링을 위한 state
+  const [level, setLevel] = useState<string>("");
+
+  // 실제 둘레길 모양을 그리기 위한 정보
+  const [paths, setPaths] = useState<Position[][][]>([]);
+
+  // 지도 초기화
+  const onMapInit = () => {
+    // 카카오맵은 실제 지도 조작과 state 관리를 분리해야 함
+    const map = mapRef.current;
+    if (!map) return;
+
+    const seoulLatLng = new kakao.maps.LatLng(
+      SEOUL_CENTER.lat,
+      SEOUL_CENTER.lng,
+    );
+
+    map.setCenter(seoulLatLng);
+    map.setLevel(9);
+
+    setCenter(SEOUL_CENTER);
+    setMapLevel(9);
+    setIsMyLocation(false);
+    setMyLocation(SEOUL_CENTER);
+    setLevel("");
+  };
 
   const zoomIn = () => {
     const map = mapRef.current;
     if (!map) return;
-    map.setLevel(map.getLevel() - 1);
+    map.setLevel(map.getLevel() - 1, { animate: true });
   };
 
   const zoomOut = () => {
     const map = mapRef.current;
     if (!map) return;
-    map.setLevel(map.getLevel() + 1);
+    map.setLevel(map.getLevel() + 1, { animate: true });
   };
 
   const onMyLocation = () => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      setCenter({
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      });
-    });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newPosition = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setCenter(newPosition);
+        setMyLocation(newPosition);
+        setIsMyLocation(true);
+      },
+      (error) => {
+        console.error("위치 정보를 가져오는데 실패했습니다.", error);
+      },
+    );
   };
+
+  const onDragEnd = () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const curLat = map.getCenter().getLat();
+    const curLng = map.getCenter().getLng();
+
+    const isMoved =
+      Math.abs(curLat - myLocation.lat) > 0.05 ||
+      Math.abs(curLng - myLocation.lng) > 0.05;
+
+    if (isMoved && isMyLocation) {
+      setIsMyLocation(false);
+    }
+  };
+
+  const onZoomChanged = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    setMapLevel(map.getLevel());
+  };
+
+  const onLevelChanged = (levelName: string) => setLevel(levelName);
+
+  useEffect(() => {
+    const polyLines: Position[][][] = parseGeoJson();
+    setPaths(polyLines);
+  }, []);
 
   return (
     <div>
-      {/* 지도 */}
       <Map
         center={center}
         isPanto={true}
         className="w-screen h-screen"
-        level={9}
+        level={mapLevel}
         ref={mapRef}
+        zoomable={false}
+        onZoomChanged={onZoomChanged}
+        onDragEnd={onDragEnd}
       >
         {infos.map((i) => (
-          // <PointMarker
-          //   key={i.ROAD_NO}
-          //   item={i}
-          //   onRoadSelect={onRoadSelect}
-          //   isSelected={i.ROAD_NO === selectedRoad}
-          // />
           <MapMarkerSet
             key={i.ROAD_NO}
             item={i}
             onRoadSelect={onRoadSelect}
             isSelected={i.ROAD_NO === selectedRoad}
+            levelName={level}
           />
         ))}
+        {isMyLocation && <MyLocationMarker position={myLocation} />}
+        {paths &&
+          paths.map((positions, index) => (
+            <Polyline
+              key={index}
+              path={positions}
+              strokeWeight={4}
+              strokeColor={"oklch(51.1% 0.262 276.966)"}
+              strokeOpacity={0.7}
+              strokeStyle={"solid"}
+            />
+          ))}
+        <MapTypeId type={"TERRAIN"} />
       </Map>
-      {/* 줌버튼 */}
-      <div className="absolute z-20 bottom-26 right-4 flex flex-col bg-white rounded-sm shadow-md">
-        <button
-          className="flex h-10 w-10 items-center justify-center border-b border-b-gray-200"
-          onClick={() => zoomIn}
-        >
-          <Plus size={20} strokeWidth={2.5} />
-        </button>
-        <button
-          className="flex h-10 w-10 items-center justify-center"
-          onClick={() => zoomOut}
-        >
-          <Minus size={20} strokeWidth={2.5} />
-        </button>
-      </div>
-
-      {/* 내 위치 버튼 */}
-      <div className="absolute z-20 bottom-14 right-4">
-        <button
-          onClick={onMyLocation}
-          className="flex h-10 w-10 items-center justify-center bg-white rounded-sm shadow-md"
-        >
-          <LocateFixed size={20} strokeWidth={2.5} />
-        </button>
-      </div>
+      <ZoomButtons zoomIn={zoomIn} zoomOut={zoomOut} />
+      <MyLocationButton onMyLocation={onMyLocation} />
+      <FilterButtons onLevelChanged={onLevelChanged} />
+      <button
+        className="absolute z-1000 top-50 left-50 bg-red-600"
+        onClick={onMapInit}
+      >
+        초기화
+      </button>
     </div>
   );
-}
-
-{
-  /* <Polyline
-        path={[
-          [
-            { lat: 33.452344169439975, lng: 126.56878163224233 },
-            { lat: 33.452739313807456, lng: 126.5709308145358 },
-            { lat: 33.45178067090639, lng: 126.572688693875 },
-          ],
-        ]}
-        strokeWeight={5} // 선의 두께 입니다
-        strokeColor={"#FFAE00"} // 선의 색깔입니다
-        strokeOpacity={0.7} // 선의 불투명도 입니다 1에서 0 사이의 값이며 0에 가까울수록 투명합니다
-        strokeStyle={"solid"} // 선의 스타일입니다
-      /> */
 }
