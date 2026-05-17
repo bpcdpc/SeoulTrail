@@ -70,7 +70,7 @@ export default function SideBar() {
           <div className="text-gray-800 flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <h3 className="text-xl font-bold flex gap-2 items-center">
-                <span className="bg-blue-600 text-white flex items-center justify-center w-[46px] h-[45px] rounded-lg outline-2 outline-blue-50 -outline-offset-5">
+                <span className="bg-blue-600 text-white flex items-center justify-center w-11.5 h-11.25 rounded-lg outline-2 outline-blue-50 -outline-offset-5">
                   {ROAD_NO}
                 </span>
                 <span>{ROAD_NM}길</span>
