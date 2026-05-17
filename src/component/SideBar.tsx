@@ -134,6 +134,7 @@ export default function SideBar() {
       onTransitionEnd={onTransitionEnd}
     >
       <Header />
+      <div className="absolute w-full h-13 bg-white shadow-md"></div>
       <button onClick={onSideBarClose} className="absolute right-3 top-3 z-100">
         <X size={25} strokeWidth={2} color="#333" />
       </button>

@@ -11,8 +11,13 @@ import { SEOUL_CENTER } from "../data/seoulCenter";
 import { TrailStateContext } from "../context/TrailStateContext";
 import { TrailDispatchContext } from "../context/TrailDispatchContext";
 
+// 업데이트, fetch 가능성이 없으므로 컴포넌트 외부에서 데이터를 가공한다.
+// 컴포넌트 라이프사이클과 무관하게 된다.
+const polyLines: Position[][][] = parseGeoJson();
+
 export default function MainMap() {
-  const { infos, selectedRoad, selectedLevel } = useContext(TrailStateContext);
+  const { infos, selectedRoad, selectedLevel, mapResetCount } =
+    useContext(TrailStateContext);
   const { onRoadSelect, onLevelChange } = useContext(TrailDispatchContext);
   // 지도를 조작하기 위해 필요
   const mapRef = useRef<kakao.maps.Map>(null);
@@ -22,29 +27,6 @@ export default function MainMap() {
   const [mapLevel, setMapLevel] = useState<number>(9);
   const [isMyLocation, setIsMyLocation] = useState<boolean>(false);
   const [myLocation, setMyLocation] = useState<Position>(center);
-
-  // 실제 둘레길 모양을 그리기 위한 정보
-  const [paths, setPaths] = useState<Position[][][]>([]);
-
-  // 지도 초기화
-  const onMapInit = () => {
-    // 카카오맵은 실제 지도 조작과 state 관리를 분리해야 함
-    const map = mapRef.current;
-    if (!map) return;
-
-    const seoulLatLng = new kakao.maps.LatLng(
-      SEOUL_CENTER.lat,
-      SEOUL_CENTER.lng,
-    );
-
-    map.setCenter(seoulLatLng);
-    map.setLevel(9);
-
-    setCenter(SEOUL_CENTER);
-    setMapLevel(9);
-    setIsMyLocation(false);
-    setMyLocation(SEOUL_CENTER);
-  };
 
   const zoomIn = () => {
     const map = mapRef.current;
@@ -97,10 +79,25 @@ export default function MainMap() {
     setMapLevel(map.getLevel());
   };
 
+  // 지도 초기화
   useEffect(() => {
-    const polyLines: Position[][][] = parseGeoJson();
-    setPaths(polyLines);
-  }, []);
+    // 카카오맵은 실제 지도 조작과 state 관리를 분리해야 함
+    const map = mapRef.current;
+    if (!map) return;
+
+    const seoulLatLng = new kakao.maps.LatLng(
+      SEOUL_CENTER.lat,
+      SEOUL_CENTER.lng,
+    );
+
+    map.setCenter(seoulLatLng);
+    map.setLevel(9);
+
+    setCenter(SEOUL_CENTER);
+    setMapLevel(9);
+    setIsMyLocation(false);
+    setMyLocation(SEOUL_CENTER);
+  }, [mapResetCount]); // 부모의 onAppInit이 실행되면 mapResetCount 값이 변경되고, 그것을 감지하여 지도를 초기화 한다.
 
   return (
     <div>
@@ -124,8 +121,8 @@ export default function MainMap() {
           />
         ))}
         {isMyLocation && <MyLocationMarker position={myLocation} />}
-        {paths &&
-          paths.map((positions, index) => (
+        {polyLines &&
+          polyLines.map((positions, index) => (
             <Polyline
               key={index}
               path={positions}

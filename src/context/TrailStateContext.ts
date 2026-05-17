@@ -6,6 +6,7 @@ type TrailStateContextType = {
   selectedRoad: number | null;
   isSideBarOpen: boolean;
   selectedLevel: string;
+  mapResetCount: number;
 };
 
 export const TrailStateContext = createContext<TrailStateContextType>({
@@ -13,4 +14,5 @@ export const TrailStateContext = createContext<TrailStateContextType>({
   selectedRoad: null,
   isSideBarOpen: false,
   selectedLevel: "",
+  mapResetCount: 0,
 });

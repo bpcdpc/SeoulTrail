@@ -5,6 +5,7 @@ export type TrailState = {
   selectedRoad: number | null;
   isSideBarOpen: boolean;
   selectedLevel: string;
+  mapResetCount: number;
 };
 
 export const initialTrailState = {
@@ -12,6 +13,7 @@ export const initialTrailState = {
   selectedRoad: null,
   isSideBarOpen: false,
   selectedLevel: "",
+  mapResetCount: 0,
 };
 
 type TrailAction =
@@ -37,7 +39,12 @@ export function trailReducer(
       if (!state.isSideBarOpen) return { ...state, selectedRoad: null };
       return state;
     case "APP_INIT":
-      return { ...state, isSideBarOpen: false };
+      return {
+        ...state,
+        isSideBarOpen: false,
+        selectedLevel: "",
+        mapResetCount: state.mapResetCount + 1,
+      };
     case "SET_LEVEL":
       return { ...state, selectedLevel: action.payload };
     default:

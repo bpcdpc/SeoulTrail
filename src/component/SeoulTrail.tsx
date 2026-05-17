@@ -142,6 +142,7 @@ export default function SeoulTrail() {
           selectedRoad: state.selectedRoad,
           isSideBarOpen: state.isSideBarOpen,
           selectedLevel: state.selectedLevel,
+          mapResetCount: state.mapResetCount,
         }}
       >
         <div className="relative w-screen h-screen overflow-hidden">

@@ -31,8 +31,11 @@ const MapMarkerSet = ({
   let markerStyles =
     "w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md hover:scale-110";
 
-  if (isSelected) {
-    // 선택된 마커 (최우선 순위)
+  if (isSelected && isFiltered) {
+    // 선택된 마커이면서 필터링된 마커 (최우선 순위)
+    markerStyles += ` ${setLevelClassName(item.LV_KORN)} scale-110 ring-4 ring-indigo-200`;
+  } else if (isSelected) {
+    // 선택된 마커
     markerStyles += " bg-indigo-600 scale-110 ring-4 ring-indigo-200";
   } else if (isFiltered) {
     // 필터링된 마커
