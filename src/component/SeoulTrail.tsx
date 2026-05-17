@@ -1,5 +1,4 @@
 import { ENV } from "../config/env";
-import type { MergedItem } from "../type/geoTypes";
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 import { useState, useEffect, useCallback, useReducer } from "react";
 import { TrailStateContext } from "../context/TrailStateContext";
