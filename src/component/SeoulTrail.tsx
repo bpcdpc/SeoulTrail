@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { MergedItem } from "../type/geoTypes";
 import { fetchMergedItems } from "../util/fetchGeoData";
 import { useKakaoLoader } from "react-kakao-maps-sdk";
@@ -10,6 +10,8 @@ import Header from "./Header";
 import StatusScreen from "./StatusScreen";
 import RefreshButton from "./RefreshButton";
 import Spinner from "./Spinner";
+import { TrailStateContext } from "../context/TrailStateContext";
+import { TrailDispatchContext } from "../context/TrailDispatchContext";
 
 export default function SeoulTrail() {
   // 데이터를 담을 states
@@ -30,34 +32,38 @@ export default function SeoulTrail() {
   const [selectedRoad, setSelectedRoad] = useState<number | null>(null);
   const [isSideBarOpen, setIsSideBarOpen] = useState<boolean>(false);
 
+  // 난이도 필터링을 위한 state
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
+
   // 지도에서 특정 둘레길 마커를 선택할 때
-  const onRoadSelect = (targetRoadNumber: number) => {
+  const onRoadSelect = useCallback((targetRoadNumber: number) => {
     setSelectedRoad(targetRoadNumber);
     setIsSideBarOpen(true);
-  };
-
-  // 선택된 마커의 둘레길 번호에 해당하는 객체를 지정
-  const selectedItem: MergedItem = infos.filter(
-    (item) => item.ROAD_NO === selectedRoad,
-  )[0];
+  }, []);
 
   // 사이드바가 닫힐 때
-  const onSideBarClose = () => {
+  const onSideBarClose = useCallback(() => {
     setIsSideBarOpen(false);
-  };
+  }, []);
 
   // 사이드바가 닫힌 후에
-  const afterSideBarClosed = () => {
+  const afterSideBarClosed = useCallback(() => {
     if (!isSideBarOpen) {
       setSelectedRoad(null);
     }
-  };
+  }, []);
 
   // 앱을 초기화
-  const onAppInit = () => {
-    setSelectedRoad(null);
+  const onAppInit = useCallback(() => {
+    // setSelectedRoad(null);
     setIsSideBarOpen(false);
-  };
+  }, []);
+
+  // 난이도를 선택할 때
+  const onLevelChange = useCallback(
+    (levelName: string) => setSelectedLevel(levelName),
+    [],
+  );
 
   // 데이터 가져오기
   useEffect(() => {
@@ -127,20 +133,25 @@ export default function SeoulTrail() {
     );
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
-      <Header onInit={onAppInit} />
-      <SideBar
-        item={selectedItem}
-        isSideBarOpen={isSideBarOpen}
-        onSideBarClose={onSideBarClose}
-        afterSideBarClosed={afterSideBarClosed}
-      />
-      <MainMap
-        infos={infos}
-        selectedRoad={selectedRoad || null}
-        onRoadSelect={onRoadSelect}
-      />
-      <Footer />
-    </div>
+    <TrailDispatchContext.Provider
+      value={{
+        onRoadSelect,
+        onSideBarClose,
+        afterSideBarClosed,
+        onAppInit,
+        onLevelChange,
+      }}
+    >
+      <TrailStateContext.Provider
+        value={{ infos, selectedRoad, isSideBarOpen, selectedLevel }}
+      >
+        <div className="relative w-screen h-screen overflow-hidden">
+          <Header />
+          <SideBar />
+          <MainMap />
+          <Footer />
+        </div>
+      </TrailStateContext.Provider>
+    </TrailDispatchContext.Provider>
   );
 }

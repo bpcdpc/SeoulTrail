@@ -1,29 +1,27 @@
 import { CustomOverlayMap } from "react-kakao-maps-sdk";
 import type { MergedItem } from "../type/geoTypes";
-import { useState } from "react";
+import React, { useState } from "react";
 import { setLevelClassName } from "../util/miscFunctions";
 
 type MapMarkerSetProps = {
   item: MergedItem;
   isSelected: boolean;
-  levelName: string;
-  // isFiltered: boolean;
+  selectedLevel: string;
   onRoadSelect: (targetRoadNumber: number) => void;
 };
 
-export default function MapMarkerSet({
+const MapMarkerSet = ({
   item,
   isSelected,
-  // isFiltered,
-  levelName,
+  selectedLevel,
   onRoadSelect,
-}: MapMarkerSetProps) {
+}: MapMarkerSetProps) => {
   const [isOver, setIsOver] = useState<boolean>(false);
 
   const onClick = () => onRoadSelect(item.ROAD_NO);
 
   const isActivated: Boolean = isOver || isSelected;
-  const isFiltered: Boolean = levelName === item.LV_KORN;
+  const isFiltered: Boolean = selectedLevel === item.LV_KORN;
   const overlayZIndex: number = isOver
     ? 50
     : isSelected || isFiltered
@@ -34,12 +32,16 @@ export default function MapMarkerSet({
     "w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md hover:scale-110";
 
   if (isSelected) {
+    // 선택된 마커 (최우선 순위)
     markerStyles += " bg-indigo-600 scale-110 ring-4 ring-indigo-200";
   } else if (isFiltered) {
+    // 필터링된 마커
     markerStyles += ` ${setLevelClassName(item.LV_KORN)}`;
-  } else if (levelName !== "") {
-    markerStyles += " bg-gray-300 hover:bg-blue-500";
+  } else if (selectedLevel !== "") {
+    // 필터링에서 제외된 마커
+    markerStyles += " bg-zinc-400 opacity-0.9 hover:bg-blue-500";
   } else {
+    // 기본 마커
     markerStyles += " bg-blue-400 text-white hover:bg-blue-500";
   }
 
@@ -81,4 +83,6 @@ export default function MapMarkerSet({
       </div>
     </CustomOverlayMap>
   );
-}
+};
+
+export default React.memo(MapMarkerSet);

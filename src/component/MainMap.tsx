@@ -1,25 +1,19 @@
 import { Map, MapTypeId, Polyline } from "react-kakao-maps-sdk";
-import type { MergedItem, Position } from "../type/geoTypes";
+import type { Position } from "../type/geoTypes";
 import MapMarkerSet from "./MarkerSet";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import ZoomButtons from "./ZoomButtons";
 import MyLocationButton from "./MyLocationButton";
 import MyLocationMarker from "./MyLocationMarker";
 import { parseGeoJson } from "../util/parseGeoJson";
 import FilterButtons from "./FilterButtons";
 import { SEOUL_CENTER } from "../data/seoulCenter";
+import { TrailStateContext } from "../context/TrailStateContext";
+import { TrailDispatchContext } from "../context/TrailDispatchContext";
 
-type MainMapProps = {
-  infos: MergedItem[];
-  selectedRoad: number | null;
-  onRoadSelect: (targetRoadNumber: number) => void;
-};
-
-export default function MainMap({
-  infos,
-  selectedRoad,
-  onRoadSelect,
-}: MainMapProps) {
+export default function MainMap() {
+  const { infos, selectedRoad, selectedLevel } = useContext(TrailStateContext);
+  const { onRoadSelect, onLevelChange } = useContext(TrailDispatchContext);
   // 지도를 조작하기 위해 필요
   const mapRef = useRef<kakao.maps.Map>(null);
 
@@ -28,9 +22,6 @@ export default function MainMap({
   const [mapLevel, setMapLevel] = useState<number>(9);
   const [isMyLocation, setIsMyLocation] = useState<boolean>(false);
   const [myLocation, setMyLocation] = useState<Position>(center);
-
-  // 난이도 필터링을 위한 state
-  const [level, setLevel] = useState<string>("");
 
   // 실제 둘레길 모양을 그리기 위한 정보
   const [paths, setPaths] = useState<Position[][][]>([]);
@@ -53,7 +44,6 @@ export default function MainMap({
     setMapLevel(9);
     setIsMyLocation(false);
     setMyLocation(SEOUL_CENTER);
-    setLevel("");
   };
 
   const zoomIn = () => {
@@ -107,8 +97,6 @@ export default function MainMap({
     setMapLevel(map.getLevel());
   };
 
-  const onLevelChanged = (levelName: string) => setLevel(levelName);
-
   useEffect(() => {
     const polyLines: Position[][][] = parseGeoJson();
     setPaths(polyLines);
@@ -132,7 +120,7 @@ export default function MainMap({
             item={i}
             onRoadSelect={onRoadSelect}
             isSelected={i.ROAD_NO === selectedRoad}
-            levelName={level}
+            selectedLevel={selectedLevel}
           />
         ))}
         {isMyLocation && <MyLocationMarker position={myLocation} />}
@@ -151,13 +139,7 @@ export default function MainMap({
       </Map>
       <ZoomButtons zoomIn={zoomIn} zoomOut={zoomOut} />
       <MyLocationButton onMyLocation={onMyLocation} />
-      <FilterButtons onLevelChanged={onLevelChanged} />
-      <button
-        className="absolute z-1000 top-50 left-50 bg-red-600"
-        onClick={onMapInit}
-      >
-        초기화
-      </button>
+      <FilterButtons onLevelChange={onLevelChange} />
     </div>
   );
 }

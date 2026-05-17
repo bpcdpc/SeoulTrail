@@ -4,49 +4,21 @@ import { X } from "lucide-react";
 import { fetchImages } from "../util/fetchImageData";
 import type { ImageItem } from "../type/imageTypes";
 import { setLevelClassName, removeHtml } from "../util/miscFunctions";
+import { useContext } from "react";
+import { TrailStateContext } from "../context/TrailStateContext";
+import { TrailDispatchContext } from "../context/TrailDispatchContext";
+import Header from "./Header";
 
-type SideBarProps = {
-  item: MergedItem;
-  isSideBarOpen: boolean;
-  onSideBarClose: () => void;
-  afterSideBarClosed: () => void;
-};
+export default function SideBar() {
+  const { infos, selectedRoad, isSideBarOpen } = useContext(TrailStateContext);
+  const { onSideBarClose, afterSideBarClosed } =
+    useContext(TrailDispatchContext);
 
-export default function SideBar({
-  item,
-  isSideBarOpen,
-  onSideBarClose,
-  afterSideBarClosed,
-}: SideBarProps) {
-  const {
-    ROAD_NO = "",
-    ROAD_NM = "",
-    ROAD_SUB_TTL = "",
-    LV_KORN = "",
-    ROAD_LEN = 0,
-    REQ_HR = "",
-    ROAD_DTL_NM = "",
-    STMP_PSTN_1 = "",
-    STMP_PSTN_2 = "",
-    STMP_PSTN_3 = "",
-    ROAD_EXPLN = "",
-  } = item || {};
-
-  const levelClassName = setLevelClassName(LV_KORN);
-  const stampPositions = [STMP_PSTN_1, STMP_PSTN_2, STMP_PSTN_3];
-  const sanitizedStampPositions = stampPositions.map((s) => removeHtml(s));
+  const item: MergedItem | undefined = infos.find(
+    (i) => i.ROAD_NO === selectedRoad,
+  );
 
   const [images, setImages] = useState<ImageItem[]>([]);
-
-  const onTransitionEnd = (e: React.TransitionEvent<HTMLElement>) => {
-    if (e.target === e.currentTarget && e.propertyName === "width") {
-      if (isSideBarOpen) {
-      } else {
-        afterSideBarClosed();
-        setImages([]);
-      }
-    }
-  };
 
   useEffect(() => {
     if (!item) return;
@@ -61,16 +33,38 @@ export default function SideBar({
     loadImages();
   }, [item]);
 
-  return (
-    <aside
-      className={`transition-[width] duration-300 absolute z-500 bg-gray-50 overflow-hidden h-full shadow-2xl ${
-        isSideBarOpen ? "w-full sm:w-100" : "w-0"
-      }`}
-      onTransitionEnd={onTransitionEnd}
-    >
-      <button onClick={onSideBarClose} className="absolute right-3 top-3 z-100">
-        <X size={20} strokeWidth={2.5} color="#333" />
-      </button>
+  const onTransitionEnd = (e: React.TransitionEvent<HTMLElement>) => {
+    if (e.target === e.currentTarget && e.propertyName === "width") {
+      if (isSideBarOpen) {
+      } else {
+        afterSideBarClosed();
+        setImages([]);
+      }
+    }
+  };
+
+  let sidebarContent = null;
+
+  if (item) {
+    const {
+      ROAD_NO,
+      ROAD_NM,
+      ROAD_SUB_TTL,
+      LV_KORN,
+      ROAD_LEN,
+      REQ_HR,
+      ROAD_DTL_NM,
+      STMP_PSTN_1,
+      STMP_PSTN_2,
+      STMP_PSTN_3,
+      ROAD_EXPLN,
+    } = item;
+
+    const levelClassName = setLevelClassName(LV_KORN);
+    const stampPositions = [STMP_PSTN_1, STMP_PSTN_2, STMP_PSTN_3];
+    const sanitizedStampPositions = stampPositions.map((s) => removeHtml(s));
+
+    sidebarContent = (
       <div className="w-screen sm:w-100 pt-20 pl-3 pr-10 pb-6 h-full overflow-x-hidden overflow-y-scroll">
         {item && (
           <div className="text-gray-800 flex flex-col gap-5">
@@ -129,6 +123,21 @@ export default function SideBar({
           </div>
         )}
       </div>
+    );
+  }
+
+  return (
+    <aside
+      className={`transition-[width] duration-300 absolute z-500 bg-gray-50 overflow-hidden h-full shadow-2xl ${
+        isSideBarOpen ? "w-full sm:w-100" : "w-0"
+      }`}
+      onTransitionEnd={onTransitionEnd}
+    >
+      <Header />
+      <button onClick={onSideBarClose} className="absolute right-3 top-3 z-100">
+        <X size={25} strokeWidth={2} color="#333" />
+      </button>
+      {sidebarContent}
     </aside>
   );
 }
