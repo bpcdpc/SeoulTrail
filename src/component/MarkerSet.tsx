@@ -3,19 +3,19 @@ import type { MergedItem } from "../type/geoTypes";
 import React, { useState } from "react";
 import { setLevelClassName } from "../util/miscFunctions";
 
-type MapMarkerSetProps = {
+type MarkerSetProps = {
   item: MergedItem;
   isSelected: boolean;
   selectedLevel: string;
   onRoadSelect: (targetRoadNumber: number) => void;
 };
 
-const MapMarkerSet = ({
+const MarkerSet = ({
   item,
   isSelected,
   selectedLevel,
   onRoadSelect,
-}: MapMarkerSetProps) => {
+}: MarkerSetProps) => {
   const [isOver, setIsOver] = useState<boolean>(false);
 
   const onClick = () => onRoadSelect(item.ROAD_NO);
@@ -90,4 +90,4 @@ const MapMarkerSet = ({
   );
 };
 
-export default React.memo(MapMarkerSet);
+export default React.memo(MarkerSet);

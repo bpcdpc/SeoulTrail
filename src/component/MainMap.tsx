@@ -1,6 +1,6 @@
 import { Map, MapTypeId, Polyline } from "react-kakao-maps-sdk";
 import type { Position } from "../type/geoTypes";
-import MapMarkerSet from "./MarkerSet";
+import MarkerSet from "./MarkerSet";
 import { useContext, useEffect, useRef, useState } from "react";
 import ZoomButtons from "./ZoomButtons";
 import MyLocationButton from "./MyLocationButton";
@@ -112,7 +112,7 @@ export default function MainMap() {
         onDragEnd={onDragEnd}
       >
         {infos.map((i) => (
-          <MapMarkerSet
+          <MarkerSet
             key={i.ROAD_NO}
             item={i}
             onRoadSelect={onRoadSelect}

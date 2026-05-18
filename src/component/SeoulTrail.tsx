@@ -120,7 +120,7 @@ export default function SeoulTrail() {
             setShowMap(true);
           }}
         >
-          SOUEL TRAIL
+          SEOUL TRAIL
         </button>
       </StatusScreen>
     );

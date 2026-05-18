@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { MergedItem } from "../type/geoTypes";
 import { X } from "lucide-react";
 import { fetchImages } from "../util/fetchImageData";
@@ -20,6 +20,8 @@ export default function SideBar() {
 
   const [images, setImages] = useState<ImageItem[]>([]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!item) return;
     const loadImages = async () => {
@@ -35,10 +37,10 @@ export default function SideBar() {
 
   const onTransitionEnd = (e: React.TransitionEvent<HTMLElement>) => {
     if (e.target === e.currentTarget && e.propertyName === "width") {
-      if (isSideBarOpen) {
-      } else {
+      if (!isSideBarOpen) {
         afterSideBarClosed();
         setImages([]);
+        if (scrollRef.current) scrollRef.current.scrollTop = 0;
       }
     }
   };
@@ -65,7 +67,10 @@ export default function SideBar() {
     const sanitizedStampPositions = stampPositions.map((s) => removeHtml(s));
 
     sidebarContent = (
-      <div className="w-screen sm:w-100 pt-20 pl-3 pr-10 pb-6 h-full overflow-x-hidden overflow-y-scroll">
+      <div
+        className="w-screen sm:w-100 pt-20 pl-3 pr-10 pb-6 h-full overflow-x-hidden overflow-y-scroll"
+        ref={scrollRef}
+      >
         {item && (
           <div className="text-gray-800 flex flex-col gap-5">
             <div className="flex flex-col gap-2">
@@ -134,7 +139,7 @@ export default function SideBar() {
       onTransitionEnd={onTransitionEnd}
     >
       <Header />
-      <div className="absolute w-full h-13 bg-white shadow-md"></div>
+      <div className="absolute w-full h-13 bg-white shadow-sm"></div>
       <button onClick={onSideBarClose} className="absolute right-3 top-3 z-100">
         <X size={25} strokeWidth={2} color="#333" />
       </button>
