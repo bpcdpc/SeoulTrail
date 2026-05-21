@@ -16,11 +16,13 @@ import { TrailDispatchContext } from "../context/TrailDispatchContext";
 const polyLines: Position[][][] = parseGeoJson();
 
 export default function MainMap() {
-  const { infos, selectedRoad, selectedLevel, mapResetCount } =
+  const { infos, selectedRoad, selectedLevel, isSideBarOpen, mapResetCount } =
     useContext(TrailStateContext);
   const { onRoadSelect, onLevelChange } = useContext(TrailDispatchContext);
   // 지도를 조작하기 위해 필요
   const mapRef = useRef<kakao.maps.Map>(null);
+  const map = mapRef.current;
+  if (!map) return;
 
   // 지도 렌더링 관련 state
   const [center, setCenter] = useState<Position>(SEOUL_CENTER);
@@ -29,14 +31,14 @@ export default function MainMap() {
   const [myLocation, setMyLocation] = useState<Position>(center);
 
   const zoomIn = () => {
-    const map = mapRef.current;
-    if (!map) return;
+    // const map = mapRef.current;
+    // if (!map) return;
     map.setLevel(map.getLevel() - 1, { animate: true });
   };
 
   const zoomOut = () => {
-    const map = mapRef.current;
-    if (!map) return;
+    // const map = mapRef.current;
+    // if (!map) return;
     map.setLevel(map.getLevel() + 1, { animate: true });
   };
 
@@ -47,6 +49,13 @@ export default function MainMap() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
+        // const map = mapRef.current;
+        // if (!map) return;
+        const newLatLng = new kakao.maps.LatLng(
+          position.coords.latitude,
+          position.coords.longitude,
+        );
+        (map as any).jump(newLatLng, 7, { animate: true });
         setCenter(newPosition);
         setMyLocation(newPosition);
         setIsMyLocation(true);
@@ -58,8 +67,8 @@ export default function MainMap() {
   };
 
   const onDragEnd = () => {
-    const map = mapRef.current;
-    if (!map) return;
+    // const map = mapRef.current;
+    // if (!map) return;
 
     const curLat = map.getCenter().getLat();
     const curLng = map.getCenter().getLng();
@@ -74,30 +83,59 @@ export default function MainMap() {
   };
 
   const onZoomChanged = () => {
-    const map = mapRef.current;
-    if (!map) return;
+    // const map = mapRef.current;
+    // if (!map) return;
     setMapLevel(map.getLevel());
   };
 
   // 지도 초기화
   useEffect(() => {
     // 카카오맵은 실제 지도 조작과 state 관리를 분리해야 함
-    const map = mapRef.current;
-    if (!map) return;
+    // const map = mapRef.current;
+    // if (!map) return;
 
     const seoulLatLng = new kakao.maps.LatLng(
       SEOUL_CENTER.lat,
       SEOUL_CENTER.lng,
     );
 
-    map.setCenter(seoulLatLng);
-    map.setLevel(9);
+    // map.setCenter(seoulLatLng);
+    // map.setLevel(9);
+
+    // 카카오맵에서 setCenter를 하고, setLevel을 하면 애니메이션 에러가 남.
+    // 카카오맵 원본 API에서 둘을 한꺼번에 처리할 수 있는 jump 기능을 추가해 줌.
+    // react 라이브러리에서 jump 메서드가 추가되어 있지 않아, 임시방편으로 type any로 단언하여 사용중
+    (map as any).jump(seoulLatLng, 9, { animate: true });
 
     setCenter(SEOUL_CENTER);
     setMapLevel(9);
     setIsMyLocation(false);
     setMyLocation(SEOUL_CENTER);
   }, [mapResetCount]); // 부모의 onAppInit이 실행되면 mapResetCount 값이 변경되고, 그것을 감지하여 지도를 초기화 한다.
+
+  useEffect(() => {
+    // const map = mapRef.current;
+    // if (!map) return;
+
+    const selectedRoadItem = infos.find(
+      (item) => item.ROAD_NO === selectedRoad,
+    );
+
+    const newLatLng = new kakao.maps.LatLng(
+      selectedRoadItem!.position.lat,
+      selectedRoadItem!.position.lng,
+    );
+
+    const newPosition = {
+      lat: selectedRoadItem!.position.lat,
+      lng: selectedRoadItem!.position.lng,
+    };
+
+    (map as any).jump(newLatLng, 8, { animate: true });
+    setCenter(newPosition);
+    setMapLevel(8);
+    setIsMyLocation(false);
+  }, [selectedRoad]);
 
   return (
     <div>
