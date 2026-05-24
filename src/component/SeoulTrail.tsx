@@ -1,6 +1,6 @@
 import { ENV } from "../config/env";
 import { useKakaoLoader } from "react-kakao-maps-sdk";
-import { useState, useEffect, useCallback, useReducer } from "react";
+import { useState, useEffect, useCallback, useReducer, useMemo } from "react";
 import { TrailStateContext } from "../context/TrailStateContext";
 import { TrailDispatchContext } from "../context/TrailDispatchContext";
 import { initialTrailState, trailReducer } from "../reducer/trailReducer";
@@ -29,37 +29,29 @@ export default function SeoulTrail() {
     libraries: ["services"],
   });
 
-  // 지도에서 특정 둘레길 마커를 선택할 때
-  const onRoadSelect = useCallback(
-    (targetRoadNumber: number) =>
-      dispatch({ type: "SELECT_ROAD", payload: targetRoadNumber }),
-    [],
-  );
-
-  // 사이드바가 닫힐 때
-  const onSideBarClose = useCallback(
-    () => dispatch({ type: "CLOSE_SIDEBAR" }),
-    [],
-  );
-
-  // 사이드바가 닫힌 후에
-  const afterSideBarClosed = useCallback(
-    () => dispatch({ type: "AFTER_SIDEBAR_CLOSED" }),
-    [],
-  );
-
-  // 앱을 초기화
-  const onAppInit = useCallback(() => dispatch({ type: "APP_INIT" }), []);
-
-  // 난이도를 선택할 때
-  const onLevelChange = useCallback(
-    (levelName: string) => dispatch({ type: "SET_LEVEL", payload: levelName }),
+  // Context Provider 에 전달할 함수들을 메모이제이션한다.
+  // 왜냐하면, value={객체} 로 전달할 떄, `객체`가 새로 만들어지지 않게 하기 위해서이다.
+  const dispatchValue = useMemo(
+    () => ({
+      // 지도에서 특정 둘레길 마커를 선택할 때
+      onRoadSelect: (targetRoadNumber: number) =>
+        dispatch({ type: "SELECT_ROAD", payload: targetRoadNumber }),
+      // 사이드바가 닫힐 때
+      onSideBarClose: () => dispatch({ type: "CLOSE_SIDEBAR" }),
+      // 사이드바가 닫힌 후에
+      afterSideBarClosed: () => dispatch({ type: "AFTER_SIDEBAR_CLOSED" }),
+      // 앱을 초기화
+      onAppInit: () => dispatch({ type: "APP_INIT" }),
+      // 난이도를 선택할 때
+      onLevelChange: (levelName: string) =>
+        dispatch({ type: "SET_LEVEL", payload: levelName }),
+    }),
     [],
   );
 
   // 데이터 가져오기
   useEffect(() => {
-    if (isMapLoading || mapLoadingError) return; // 지도가 로드되기 전에 데이터 가져오는 것을 방지
+    if (isMapLoading) return; // 지도가 로드되기 전에 데이터 가져오는 것을 방지
 
     const loadInitialData = async () => {
       try {
@@ -74,7 +66,7 @@ export default function SeoulTrail() {
       }
     };
     loadInitialData();
-  }, [isMapLoading, mapLoadingError]); // 지도 로딩 여부를 의존성 주입
+  }, [isMapLoading]); // 지도 로딩 여부를 의존성 주입
 
   //  지도 로딩중
   if (isMapLoading)
@@ -126,24 +118,8 @@ export default function SeoulTrail() {
     );
 
   return (
-    <TrailDispatchContext.Provider
-      value={{
-        onRoadSelect,
-        onSideBarClose,
-        afterSideBarClosed,
-        onAppInit,
-        onLevelChange,
-      }}
-    >
-      <TrailStateContext.Provider
-        value={{
-          infos: state.infos,
-          selectedRoad: state.selectedRoad,
-          isSideBarOpen: state.isSideBarOpen,
-          selectedLevel: state.selectedLevel,
-          mapResetCount: state.mapResetCount,
-        }}
-      >
+    <TrailDispatchContext.Provider value={dispatchValue}>
+      <TrailStateContext.Provider value={state}>
         <div className="relative w-screen h-screen overflow-hidden">
           <Header />
           <SideBar />
