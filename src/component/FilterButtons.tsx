@@ -1,4 +1,4 @@
-import { LEVEL_MAP } from "../data/levelMap";
+import { COURSE_LEVELS } from "../data/mapConstants";
 
 type FilterButtonsProps = {
   onLevelChange: (levelName: string) => void;
@@ -15,7 +15,7 @@ export default function FilterButtons({ onLevelChange }: FilterButtonsProps) {
       >
         전체
       </button>
-      {LEVEL_MAP.map((level) => (
+      {COURSE_LEVELS.map((level) => (
         <button
           key={level.key}
           className={`flex h-6 w-10 text-xs items-center justify-center rounded-sm text-white shadow-md font-semibold transition-all ${level.className}`}

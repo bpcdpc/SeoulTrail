@@ -7,7 +7,7 @@ import MyLocationButton from "./MyLocationButton";
 import MyLocationMarker from "./MyLocationMarker";
 import { parseGeoJson } from "../util/parseGeoJson";
 import FilterButtons from "./FilterButtons";
-import { SEOUL_CENTER } from "../data/seoulCenter";
+import { SEOUL_CENTER } from "../data/mapConstants";
 import { TrailStateContext } from "../context/TrailStateContext";
 import { TrailDispatchContext } from "../context/TrailDispatchContext";
 
@@ -104,10 +104,10 @@ export default function MainMap() {
 
           const offsetLatLng = new kakao.maps.LatLng(
             position.coords.latitude,
-            position.coords.longitude + calcOffsetLng(8, map.getLevel()),
+            position.coords.longitude + calcOffsetLng(7, map.getLevel()),
           );
 
-          (map as any).jump(offsetLatLng, 8, { animate: true });
+          (map as any).jump(offsetLatLng, 7, { animate: true });
         },
         (error) => {
           console.error("위치 정보를 가져오는데 실패했습니다.", error);
@@ -156,10 +156,10 @@ export default function MainMap() {
       withMap((map) => {
         let newLatLng = new kakao.maps.LatLng(
           selectedRoadItem.position.lat,
-          selectedRoadItem.position.lng + calcOffsetLng(8, map.getLevel()),
+          selectedRoadItem.position.lng + calcOffsetLng(7, map.getLevel()),
         );
 
-        (map as any).jump(newLatLng, 8, { animate: true });
+        (map as any).jump(newLatLng, 7, { animate: true });
         setIsMyLocation(false);
       });
     }

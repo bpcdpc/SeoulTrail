@@ -63,6 +63,7 @@ export default function SideBar() {
     } = item;
 
     const levelClassName = setLevelClassName(LV_KORN);
+    const positions = ROAD_DTL_NM.split(",");
     const stampPositions = [STMP_PSTN_1, STMP_PSTN_2, STMP_PSTN_3];
     const sanitizedStampPositions = stampPositions.map((s) => removeHtml(s));
 
@@ -113,7 +114,12 @@ export default function SideBar() {
 
             <div className="flex flex-col gap-1 text-sm">
               <div className="text-slate-500">경유지점</div>
-              <div>{ROAD_DTL_NM.replaceAll(",", " - ")}</div>
+              <div className="flex gap-2 flex-wrap">
+                {ROAD_DTL_NM.replaceAll(",", " - ")}
+                {/* {positions.map((p) => (
+                  <span>{p}</span>
+                ))} */}
+              </div>
             </div>
             <div className="flex flex-col gap-1 text-sm">
               <div className="text-slate-500">스탬프함 위치</div>
