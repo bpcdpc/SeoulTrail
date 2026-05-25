@@ -1,6 +1,6 @@
 import { ENV } from "../config/env";
 import { useKakaoLoader } from "react-kakao-maps-sdk";
-import { useState, useEffect, useCallback, useReducer, useMemo } from "react";
+import { useState, useEffect, useReducer, useMemo } from "react";
 import { TrailStateContext } from "../context/TrailStateContext";
 import { TrailDispatchContext } from "../context/TrailDispatchContext";
 import { initialTrailState, trailReducer } from "../reducer/trailReducer";

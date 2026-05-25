@@ -73,3 +73,5 @@ export interface Position {
 export interface MergedItem extends InfoItem {
   position: Position;
 }
+
+export type Direction = "IN" | "OUT";

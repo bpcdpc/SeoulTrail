@@ -48,7 +48,7 @@ const MarkerSet = ({
     markerStyles += " bg-blue-400 text-white hover:bg-blue-500";
   }
 
-  console.log(`${item.ROAD_NO} MapMarkerSet rendered`);
+  // console.log(`${item.ROAD_NO} MapMarkerSet rendered`);
 
   return (
     <CustomOverlayMap

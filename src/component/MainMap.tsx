@@ -1,5 +1,5 @@
 import { Map, MapTypeId, Polyline } from "react-kakao-maps-sdk";
-import type { Position } from "../type/geoTypes";
+import type { Position, Direction } from "../type/geoTypes";
 import MarkerSet from "./MarkerSet";
 import { useContext, useEffect, useRef, useState } from "react";
 import ZoomButtons from "./ZoomButtons";
@@ -23,7 +23,7 @@ export default function MainMap() {
   // 지도를 조작하기 위해 필요
   const mapRef = useRef<kakao.maps.Map>(null);
 
-  // 지도 렌더링 관련 state
+  // 내 위치 관련 state
   const [isMyLocation, setIsMyLocation] = useState<boolean>(false);
   const [myLocation, setMyLocation] = useState<Position>(SEOUL_CENTER);
 
@@ -38,40 +38,51 @@ export default function MainMap() {
 
   // 사이드바가 펼쳐졌는지 감지해서 오프셋 위경도 계산해주는 함수.
   // 카카오맵에서 레벨과 센터를 동시에 변경하려면
-  // jump 메쏘드로 한번에 호출해야 해서, 메쏘드 호출 전에 오프셋 다 계산해서 넘겨줘야 함.
-  const calcOffsetLng = (targetLevel: number): number => {
+  // jump 메쏘드로 한번에 호출해야 해서, 메쏘드 호출 전에 오프셋을 다 계산해서 넘겨줘야 함.
+  const calcOffsetLng = (targetLevel: number, curLevel: number): number => {
     let offsetLng = 0;
-    if (isSideBarOpen) {
+    // 사이드바 너비가 테일윈드로 지정되어 있는데,
+    // 기본값은 가로 full 이고,
+    // 브라우저 너비가 sm 이상일 경우에는 100 == 40rem == 640px 으로 제한되도록 구현되었다.
+    // 그래서 사이드바가 열려있고, 브라우저 너비가 조건에 맞을 경우에만 사이드바 너비를 고려해야 한다.
+    if (isSideBarOpen && window.innerWidth >= 640) {
       withMap((map) => {
-        // 현재 지도의 중심점을 왼쪽으로 200px 밀었을 때의 좌표를 구해서
+        // 레벨 차이
+        const deltaLevel = targetLevel - curLevel;
+
+        // 현재 지도의 중심 좌표의 포인트를 계산
         const projection = map.getProjection();
         const centerLatLng = map.getCenter();
         const centerPoint = projection.containerPointFromCoords(centerLatLng);
-        centerPoint.x -= 200;
+
+        // 레벨 차이를 고려하여 몇 픽셀을 이동시키면 될지 계산
+        centerPoint.x -= 200 * 2 ** deltaLevel;
+
+        // 계산된 point를 위경도 좌표로 변환
         const newLatLng = projection.coordsFromContainerPoint(centerPoint);
 
-        // 현재 좌표와의 경도 차이 계산
-        const diffX = newLatLng.getLng() - centerLatLng.getLng();
-
-        // 목표 레벨과 현재 레벌의 단계 차이에 따라 2의 지수만큼 곱해서 변한 정도를 계산
-        const curLevel = map.getLevel();
-        const targetDeltaX = diffX * 2 ** (targetLevel - curLevel);
-
-        offsetLng = targetDeltaX;
+        // 경도 차이값을 계산
+        offsetLng = newLatLng.getLng() - centerLatLng.getLng();
       });
     }
     return offsetLng;
   };
 
-  const zoomIn = () => {
+  const onZoomChange = (direction: Direction) => {
     withMap((map) => {
-      map.setLevel(map.getLevel() - 1, { animate: true });
-    });
-  };
+      const curLevel = map.getLevel();
+      const targetLevel = direction === "IN" ? curLevel - 1 : curLevel + 1;
 
-  const zoomOut = () => {
-    withMap((map) => {
-      map.setLevel(map.getLevel() + 1, { animate: true });
+      if (targetLevel < 1 || targetLevel > 14) return;
+
+      let newLatLng = new kakao.maps.LatLng(
+        map.getCenter().getLat(),
+        map.getCenter().getLng() -
+          calcOffsetLng(curLevel, curLevel) + // 이미 사이드바에 의해서 변경된 센터일 가능성이 있으므로, 원래 센터로 한번 바꿔준다.
+          calcOffsetLng(targetLevel, curLevel),
+      );
+
+      (map as any).jump(newLatLng, targetLevel, { animate: true });
     });
   };
 
@@ -93,7 +104,7 @@ export default function MainMap() {
 
           const offsetLatLng = new kakao.maps.LatLng(
             position.coords.latitude,
-            position.coords.longitude + calcOffsetLng(8),
+            position.coords.longitude + calcOffsetLng(8, map.getLevel()),
           );
 
           (map as any).jump(offsetLatLng, 8, { animate: true });
@@ -129,7 +140,7 @@ export default function MainMap() {
         SEOUL_CENTER.lng,
       );
 
-      // 카카오맵에서 setCenter를 하고, setLevel을 하면 애니메이션 에러가 남.
+      // 카카오맵에서 setCenter를 하고, setLevel을 하면 애니메이션이 부드럽게 되지 않음.
       // 카카오맵 원본 API에서 둘을 한꺼번에 처리할 수 있는 jump 기능을 추가해 줌.
       // react 라이브러리에서 jump 메서드가 추가되어 있지 않아, 임시방편으로 type any로 단언하여 사용중
       (map as any).jump(seoulLatLng, 9, { animate: true });
@@ -145,7 +156,7 @@ export default function MainMap() {
       withMap((map) => {
         let newLatLng = new kakao.maps.LatLng(
           selectedRoadItem.position.lat,
-          selectedRoadItem.position.lng + calcOffsetLng(8),
+          selectedRoadItem.position.lng + calcOffsetLng(8, map.getLevel()),
         );
 
         (map as any).jump(newLatLng, 8, { animate: true });
@@ -198,7 +209,7 @@ export default function MainMap() {
           ))}
         <MapTypeId type={"TERRAIN"} />
       </Map>
-      <ZoomButtons zoomIn={zoomIn} zoomOut={zoomOut} />
+      <ZoomButtons onZoomChange={onZoomChange} />
       <MyLocationButton onMyLocation={onMyLocation} />
       <FilterButtons onLevelChange={onLevelChange} />
     </div>
